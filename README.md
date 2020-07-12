@@ -39,4 +39,4 @@ By reading the source code you agree to not sue me for any strokes that may occu
 |--|--|--|
 | Watermark | 0x00 - 0x0F |Austin Paint Watermark
 |Color Table|0x10 - 0x3F|Contains 3 bytes for each of the 16 colors in an RR GG BB format|
-|Pixel Data|0x40 - 0x230|4 Bits for each pixel corresponding to the index for the color of the pixel
+|Pixel Data|0x40 - 0x23F|4 Bits for each pixel corresponding to the index for the color of the pixel
