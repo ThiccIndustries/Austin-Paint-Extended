@@ -1,6 +1,8 @@
 # Austin-Paint-Extended
 The useless editor for a useless, proprietary format.
 
+By reading the sorce code you agree to not sue me for any strokes that may occur
+
 ## Application Controls
 ###  General:
 |Key| Function
