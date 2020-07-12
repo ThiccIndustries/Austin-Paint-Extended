@@ -1,4 +1,4 @@
-# Austin-Paint-Extended
+# Austin Paint Extended
 The useless editor for a useless, proprietary format.
 
 By reading the source code you agree to not sue me for any strokes that may occur
