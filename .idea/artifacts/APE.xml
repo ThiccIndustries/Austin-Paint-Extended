@@ -1,0 +1,11 @@
+<component name="ArtifactManager">
+  <artifact type="apk" name="APE">
+    <output-path>$PROJECT_DIR$/out/artifacts/APE</output-path>
+    <properties id="android-properties">
+      <options>
+        <option name="keyStoreUrl" value="file://" />
+      </options>
+    </properties>
+    <root id="archive" name="APE.apk" />
+  </artifact>
+</component>
