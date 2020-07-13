@@ -9,6 +9,7 @@ import java.awt.*;
 import static org.lwjgl.glfw.GLFW.glfwSetWindowTitle;
 import static org.lwjgl.opengl.GL11.*;
 
+/**This class isn't commented beyond the Functions, and each and every quad is manually rendered with glVertex2i() statements, so consider yourself warned.**/
 public class Renderer {
 
     private static long _window;
@@ -23,6 +24,8 @@ public class Renderer {
         _uiMode = UIMode;
         this.apeApp = apeApp;
     }
+
+    /**Render the entire frame, This is the only function that can be called from outside the class**/
     public void RenderWindow(int[][] pixelArray, int windowScale, int uiMode, GLFWVidMode glfwVidMode){
         blinkRate = glfwVidMode.refreshRate();
         cycle++;
@@ -48,6 +51,8 @@ public class Renderer {
         RenderPixelGrid(pixelArray, windowScale);
         RenderUI(_window, windowScale);
     }
+
+    /**Render the bitmap grid**/
     private void RenderPixelGrid(int[][] pixelArray, int windowScale){
         int pixelSize = 16 * windowScale;
         for(int x = 0; x < 32; x++){
@@ -64,6 +69,8 @@ public class Renderer {
         }
 
     }
+
+    /**Render the UI**/
     private void RenderUI(long window, int windowScale){
         int[] mousePosition = apeApp.UpdateMousePixelPosition(window, windowScale);
         int pixelSize = 16 * windowScale;
@@ -98,6 +105,7 @@ public class Renderer {
 
     }
 
+    /**Render the selection border, and points**/
     private void RenderSelection(int windowScale) {
         Selection selection = apeApp.GetSelection();
         int pixelSize = 16 * windowScale;
@@ -167,6 +175,7 @@ public class Renderer {
         }
     }
 
+    /**The palette editing screen, by opening this function you wave all liability from any strokes or aneurysms that occur as a result of reading it.**/
     private static void RenderColorSelector(int windowScale) {
         int pixelSize = windowScale * 16;
         //Color Selector
