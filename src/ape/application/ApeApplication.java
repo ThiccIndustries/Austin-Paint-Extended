@@ -40,26 +40,27 @@ public class ApeApplication {
     private final LinkedList<PixelChange> undoBuffer = new LinkedList<PixelChange>();
 
 
-    /**Hooray! you've made it to the start,
-           it only goes downhill from here**/
-
     public static void main(String[] args){
-        /**Why is main static, well fine, workaround time!**/
+        //this is here because java is dumb
         ApeApplication apeApp = new ApeApplication();
     }
 
     public ApeApplication(){
-        /**Starting the program in a constructor? that's dumb**/
         _fileManager = new FileManager();
-        //load supplied path or set default.
+
+        //set default path
         _currentFile = System.getProperty("user.home") + "/appdata/local/austin_paint/picture.ap2";
+
+        //load file into application
         APFile loadedFile = new APFile();
         loadedFile = _fileManager.loadPixelArrayFromFile(_currentFile);
+
+        //load local values from file
         _pixelArray = loadedFile.pixelArray;
         palette = loadedFile.palette;
         paletteIndex = -1;
-        //_pixelArray = new int[32][32];
-        //_fileManager.saveFileFromImage(_currentFile, _pixelArray);
+
+        //start the GUI
         InitProgram();
     }
 
@@ -67,32 +68,51 @@ public class ApeApplication {
     private void InitProgram(){
         selection = new Selection();
         restart = false;
-        //create LWJGL Window
+
+        //create OpenGL window and capabilities, then create local classes
         _window = InitNewWindow(_windowResolutionScale);
         Renderer renderer = new Renderer(_window, 0, this);
         Input input = new Input();
         Mouse mouse = new Mouse();
+
+        //Init callbacks
         glfwSetKeyCallback(_window, input);
         glfwSetMouseButtonCallback(_window, mouse);
+
+        //Fix stupid VSYNC thing
         glfwSwapInterval(1);
+
+        //Main loop
         while(!glfwWindowShouldClose(_window)){
+
+            //I didn't know about glfwSetWindowShouldClose() when i wrote this and im not gonna fix it.
             if(restart)
                 break;
+
+            //Update the inputs
             Input.update();
             Mouse.update();
-            glfwPollEvents(); /**this shouldn't need to be here but it lags if i dont do it again**/
+            glfwPollEvents(); /**this shouldn't need to be here but it doesn't work if i dont do it again**/
+
+            //Update mouse pixel position
             mousePixelPosition = UpdateMousePixelPosition(_window, _windowResolutionScale);
+
+            //Run application tasks
             PollInput(_window, _windowResolutionScale, _fileManager);
             renderer.RenderWindow(_pixelArray, _windowResolutionScale, UIMode, glfwGetVideoMode(glfwGetPrimaryMonitor()));
+
+            /**This should be in the Renderer class**/
             glfwSwapBuffers(_window);
         }
+
+        //Exit program
         glfwTerminate();
         if(restart)
             InitProgram();
     }
 
     /**Should every input function be in the same place like this? No.
-            Is it? Yes.**/
+     Is it? Yes.**/
     private void PollInput(long window, int windowScale, FileManager fileManager){
         //set pixel
         if(Mouse.getButton(GLFW_MOUSE_BUTTON_1)) {
@@ -131,45 +151,46 @@ public class ApeApplication {
 
             }
 
-            /**Create new selection**/
+            //Create new selection
             if (UIMode == 2 && Mouse.getButtonDown(GLFW_MOUSE_BUTTON_1) && mousePixelPosition[1] < 32) {
-                if (selection.selectionStage == 3) { /**Reset**/
+                if (selection.selectionStage == 3) { //Finish Selection and reset
                     selection.ResetSelection();
                     selection.selectionStage = 0;
                 }
-                if (selection.selectionStage == 1) { /**Second Point**/
+                if (selection.selectionStage == 1) { //Second point
                     selection.xpoint2 = mousePixelPosition[0];
                     selection.ypoint2 = mousePixelPosition[1];
                     selection.selectionStage = 2;
                     selection.CompleteSelection(_pixelArray);
                 }
-                if (selection.selectionStage == 0) { /**First Point**/
+                if (selection.selectionStage == 0) { //First point
                     selection.xpoint1 = mousePixelPosition[0];
                     selection.ypoint1 = mousePixelPosition[1];
                     selection.selectionStage = 1;
                 }
             }
         }
-        /**Bitmap manip. mode**/
+
+        //Bitmap manip. mode
         if(mousePixelPosition[1] < 32 && UIMode == 0) {
             if(Mouse.getButtonDown(GLFW_MOUSE_BUTTON_1)) {
-                PixelChange newPixel = new PixelChange(); /**Create a new Undo Buffer for each new mouse release**/
+                PixelChange newPixel = new PixelChange(); //Create a new Undo Buffer for each new mouse release
                 undoBuffer.addFirst(newPixel);
             }
 
             if(Mouse.getButton(GLFW_MOUSE_BUTTON_1)) {
-                undoBuffer.getFirst().AddPixel(mousePixelPosition[0], mousePixelPosition[1], _pixelArray[mousePixelPosition[0]][mousePixelPosition[1]]); /**Add to existing undo buffer**/
+                undoBuffer.getFirst().AddPixel(mousePixelPosition[0], mousePixelPosition[1], _pixelArray[mousePixelPosition[0]][mousePixelPosition[1]]); //Add to existing undo buffer
                 _pixelArray[mousePixelPosition[0]][mousePixelPosition[1]] = selectedColorIndex;
             }
         }
 
-        /**Select color**/
+        //Select color
         if(mousePixelPosition[1] > 32 && Mouse.getButton(GLFW_MOUSE_BUTTON_1)){
             selectedColorIndex = mousePixelPosition[0] / 2;
         }
 
 
-        /**Copy and Paste selected pixels**/
+        //Copy and Paste selected pixels
         if(UIMode == 2 ){
 
             /**This is dumb**/
@@ -190,7 +211,7 @@ public class ApeApplication {
                 selection.xpoint2--;
             }
 
-            /** Flip selection horiz. **/
+            //Flip selection horiz.
             if(Input.getKeyDown(GLFW_KEY_Z)){
                 /** This causes a memory leak... sucks **/
                 int[][] flippedPixelArray = new int[selection.xpoint2 - selection.xpoint1 + 1][selection.ypoint2 - selection.ypoint1 + 1];
@@ -202,7 +223,7 @@ public class ApeApplication {
                 selection.pixels = flippedPixelArray;
             }
 
-            /** Flip selection vertical. **/
+            //Flip selection vertical.
             if(Input.getKeyDown(GLFW_KEY_X)){
                 /**Two memory leaks for the price of one**/
                 int[][] flippedPixelArray = new int[selection.xpoint2 - selection.xpoint1 + 1][selection.ypoint2 - selection.ypoint1 + 1];
@@ -214,7 +235,7 @@ public class ApeApplication {
                 selection.pixels = flippedPixelArray;
             }
 
-            /**Paste selection**/
+            //Paste selection
             if(Input.getKeyDown(GLFW_KEY_ENTER)){
                 //confirm paste
                 PixelChange newPixel = new PixelChange();
@@ -237,29 +258,29 @@ public class ApeApplication {
         lockMouseX = (Input.getKey(GLFW_KEY_Z) && !Input.getKey(GLFW_KEY_LEFT_CONTROL) && UIMode == 0);
         lockMouseY = (Input.getKey(GLFW_KEY_X) && !Input.getKey(GLFW_KEY_LEFT_CONTROL) && UIMode == 0);
 
-        /**Change into palette mode**/
+        //Change into palette mode
         if(Input.getKeyDown(GLFW_KEY_E)){
             UIMode = (UIMode == 1 ? 0 : 1);
             selection.ResetSelection();
             selection.selectionStage = 0;
         }
 
-        /**Change into selection mode**/
+        //Change into selection mode
         if(Input.getKeyDown(GLFW_KEY_LEFT_SHIFT)){
             UIMode = (UIMode == 2 ? 0 : 2);
         }
 
-        /**Change into bitmap mode**/
+        //Change into bitmap mode
         if(Input.getKeyDown(GLFW_KEY_ESCAPE)){
             UIMode = 0;
             selection.ResetSelection();
             selection.selectionStage = 0;
         }
 
-        /**Change window scale**/
+        //Change window scale
         if(Input.getKeyDown(GLFW_KEY_EQUAL)){
             _windowResolutionScale++;
-            restart = true; /**I really shouldn't have to restart the whole window like this but glOrthoMode: glMatrix has forced my hand**/
+            restart = true; /**I really shouldn't have to restart the whole window like the glMatrixMode doesn't update correctly if I dont**/
             glfwDestroyWindow(_window);
         }
         if(Input.getKeyDown(GLFW_KEY_MINUS)){
@@ -268,14 +289,14 @@ public class ApeApplication {
             glfwDestroyWindow(_window);
         }
 
-        /**Change to next palette.. shouldn't this just be one button**/
+        //Change to next palette
         if(Input.getKeyDown(GLFW_KEY_RIGHT_BRACKET)){
             paletteIndex++;
             if(paletteIndex > 3)
                 paletteIndex = 0;
             loadPalette(paletteIndex);
         }
-        /**Change to previous palette**/
+        //Change to previous palette
         if(Input.getKeyDown(GLFW_KEY_LEFT_BRACKET)){
             paletteIndex--;
             if(paletteIndex < 0)
@@ -283,28 +304,28 @@ public class ApeApplication {
             loadPalette(paletteIndex);
         }
 
-        /**Undo**/
+        //Undo
         if(Input.getKey(GLFW_KEY_LEFT_CONTROL) && Input.getKeyDown(GLFW_KEY_Z) && undoBuffer.size() > 0){
             PixelChange pc = undoBuffer.getFirst();
-            for(PixelChange.Pixel2i i : pc.pixelChanges){ /**Loop though all the changed pixels in the Undo Stack and... well.. undo them**/
+            for(PixelChange.Pixel2i i : pc.pixelChanges){ //Loop though all the changed pixels in the Undo Stack and... well.. undo them
                 _pixelArray[i.x][i.y] = i.colorIndex;
             }
             undoBuffer.removeFirst();
         }
 
-        /**Fill canvas**/
+        //Fill canvas
         if(Input.getKey(GLFW_KEY_LEFT_CONTROL) && Input.getKeyDown(GLFW_KEY_F)){
             PixelChange newPixel = new PixelChange();
             undoBuffer.addFirst(newPixel);
             for(int x = 0; x < 32; x++){
                 for(int y = 0; y < 32; y++){
-                    undoBuffer.getFirst().AddPixel(x,y, _pixelArray[x][y]); /** The undo buffer generated here only works like 80% of the time, deal with it**/
+                    undoBuffer.getFirst().AddPixel(x,y, _pixelArray[x][y]);
                     _pixelArray[x][y] = selectedColorIndex;
                 }
             }
         }
 
-        /**Input a manual hex code in Palette mode. No I dont know why this is all the way down here**/
+        //Input a manual hex code in Palette mode. No I dont know why this is all the way down here
         if(UIMode == 1 && Input.getKeyDown(GLFW_KEY_H)){
             /**JOptionPane is for lazy people and I'm feeling lazy**/
             String HexInput = JOptionPane.showInputDialog("Input 6 Digit Hex Code:");
@@ -330,9 +351,11 @@ public class ApeApplication {
         }
 
 
-        /**Open an Austin paint file**/
+        //Open an Austin paint file
         if(Input.getKey(GLFW_KEY_LEFT_CONTROL) && Input.getKeyDown(GLFW_KEY_O)) {
             JFileChooser fileChooser = new JFileChooser();
+
+            //Prevent user from being dumb
             fileChooser.setFileFilter(new FileFilter() {
                 @Override
                 public boolean accept(File f) {
@@ -346,7 +369,11 @@ public class ApeApplication {
                     return "Austin Paint 2 Files";
                 }
             });
+
+            //Set the default path incase the user is dumb
             fileChooser.setCurrentDirectory(new File(System.getProperty("user.home") + "/appdata/local/austin_paint/"));
+
+            //If the file path is valid, load the file
             int result = fileChooser.showOpenDialog(null);
             if (result == JFileChooser.APPROVE_OPTION) {
                 File selected = fileChooser.getSelectedFile();
@@ -355,9 +382,12 @@ public class ApeApplication {
                 palette = newFile.palette;
             }
         }
-        /**Save an Austin paint file**/
+
+        //Save an Austin paint file
         if(Input.getKey(GLFW_KEY_LEFT_CONTROL) && Input.getKeyDown(GLFW_KEY_S)){
             JFileChooser fileChooser = new JFileChooser();
+
+            //Prevent dumbness
             fileChooser.setFileFilter(new FileFilter() {
                 @Override
                 public boolean accept(File f) {
@@ -372,7 +402,10 @@ public class ApeApplication {
                     return "Austin Paint 2 Files";
                 }
             });
+
             fileChooser.setCurrentDirectory(new File(System.getProperty("user.home") + "/appdata/local/austin_paint/"));
+
+            //Save file
             int result = fileChooser.showSaveDialog(null);
             if(result == JFileChooser.APPROVE_OPTION){
                 File selected = fileChooser.getSelectedFile();
@@ -406,19 +439,20 @@ public class ApeApplication {
         }
     }
 
-    /** Create OpenGL window and create OpenGL capabilities**/
+    //Create OpenGL window and create OpenGL capabilities
     private long InitNewWindow(int windowScale){
         if(!glfwInit()){
             System.err.println("GLFW Window failed to initialize!");
             System.exit(1);
         }
-
+        
+        glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
         long window = glfwCreateWindow(512 * windowScale, (512 * windowScale) + (32 * windowScale), "Austin Paint Extended - Draw Mode", 0 , 0);
         glfwShowWindow(window);
         glfwMakeContextCurrent(window);
         GL.createCapabilities();
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-        glMatrixMode(GL_PROJECTION); /** "GL_PROJECTION is obsolete, use VBOs instead!" Do I look like I care? **/
+        glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
         glOrtho(0, 512 * windowScale, (512 * windowScale) + (32 * windowScale), 0, 1, -1);
         glMatrixMode(GL_PROJECTION); /**You may ask, why is this here twice, thats a stupid question. A better question is why does it crash when its not.**/

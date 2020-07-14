@@ -9,7 +9,6 @@ import java.awt.*;
 import static org.lwjgl.glfw.GLFW.glfwSetWindowTitle;
 import static org.lwjgl.opengl.GL11.*;
 
-/**This class isn't commented beyond the Functions, and each and every quad is manually rendered with glVertex2i() statements, so consider yourself warned.**/
 public class Renderer {
 
     private static long _window;
@@ -25,7 +24,7 @@ public class Renderer {
         this.apeApp = apeApp;
     }
 
-    /**Render the entire frame, This is the only function that can be called from outside the class**/
+    //Render the entire frame, This is the only function that can be called from outside the class
     public void RenderWindow(int[][] pixelArray, int windowScale, int uiMode, GLFWVidMode glfwVidMode){
         blinkRate = glfwVidMode.refreshRate();
         cycle++;
@@ -52,33 +51,37 @@ public class Renderer {
         RenderUI(_window, windowScale);
     }
 
-    /**Render the bitmap grid**/
+    //Render the bitmap grid
     private void RenderPixelGrid(int[][] pixelArray, int windowScale){
         int pixelSize = 16 * windowScale;
+        //Loop though the entire bitmap and draw each pixel
         for(int x = 0; x < 32; x++){
             for(int y = 0; y < 32; y++){
                 Color pixelColor = apeApp.GetPalette()[pixelArray[x][y]];
                 glColor3f(pixelColor.getRed() / 255f, pixelColor.getGreen() / 255f, pixelColor.getBlue() / 255f);
                 glBegin(GL_QUADS);
-                glVertex2i(x * pixelSize, y * pixelSize);
-                glVertex2i((x * pixelSize) + pixelSize, (y * pixelSize));
-                glVertex2i((x * pixelSize) + pixelSize, (y * pixelSize) + pixelSize);
-                glVertex2i(x * pixelSize, (y * pixelSize) + pixelSize);
+                    glVertex2i(x * pixelSize, y * pixelSize);
+                    glVertex2i((x * pixelSize) + pixelSize, (y * pixelSize));
+                    glVertex2i((x * pixelSize) + pixelSize, (y * pixelSize) + pixelSize);
+                    glVertex2i(x * pixelSize, (y * pixelSize) + pixelSize);
                 glEnd();
             }
         }
 
     }
 
-    /**Render the UI**/
+    //Render the UI
     private void RenderUI(long window, int windowScale){
-        int[] mousePosition = apeApp.UpdateMousePixelPosition(window, windowScale);
+        int[] mousePosition = apeApp.UpdateMousePixelPosition(window, windowScale); /**Why is this being called from here? i want to remove it but im too scared too**/
         int pixelSize = 16 * windowScale;
+
+        //Render additional UI if needed
         if(_uiMode == 1)
             RenderColorSelector(windowScale);
         if(_uiMode == 2)
             RenderSelection(windowScale);
 
+        //Draw color selector
         int uiSize = (32 * windowScale);
         for(int i = 0; i < 16; i++){
             int uiHeight = (apeApp.selectedColorIndex == i) ? 32 : 33;
@@ -92,7 +95,7 @@ public class Renderer {
             glEnd();
         }
 
-        //draw cursor
+        //Draw cursor
         Color cursorColor = (DISPLAY_BLINKING && _uiMode == 2) ? Palettes.Default[0] : Palettes.Default[2];
         glColor3f(cursorColor.getRed() / 255f, cursorColor.getGreen() / 255f, cursorColor.getBlue() / 255f);
         glBegin(GL_QUADS);
@@ -101,15 +104,43 @@ public class Renderer {
             glVertex2i((mousePosition[0] * pixelSize) + pixelSize,(mousePosition[1] * pixelSize) + pixelSize);
             glVertex2i((mousePosition[0] * pixelSize),(mousePosition[1] * pixelSize) + pixelSize);
         glEnd();
-        Color renderColor = apeApp.GetPalette()[1];
-
     }
 
-    /**Render the selection border, and points**/
+    //Render the selection bitmap, border, and points
     private void RenderSelection(int windowScale) {
         Selection selection = apeApp.GetSelection();
         int pixelSize = 16 * windowScale;
+
+        //Only one point selected
+        if(selection.selectionStage >= 1){
+            //Render First Point
+            Color UIColor = Palettes.Default[2];
+            glColor3f(UIColor.getRed() / 255f, UIColor.getGreen() / 255f, UIColor.getBlue() / 255f);
+            glBegin(GL_QUADS);
+                glVertex2i(selection.xpoint1 * pixelSize, selection.ypoint1 * pixelSize);
+                glVertex2i(selection.xpoint1 * pixelSize + pixelSize, selection.ypoint1 * pixelSize);
+                glVertex2i(selection.xpoint1 * pixelSize + pixelSize, selection.ypoint1 * pixelSize + pixelSize);
+                glVertex2i(selection.xpoint1 * pixelSize, selection.ypoint1 * pixelSize + pixelSize);
+            glEnd();
+        }
+
+        //Two points selected
+        if(selection.selectionStage == 2){
+            //Render Second Point
+            Color UIColor = Palettes.Default[2];
+            glColor3f(UIColor.getRed() / 255f, UIColor.getGreen() / 255f, UIColor.getBlue() / 255f);
+            glBegin(GL_QUADS);
+                glVertex2i(selection.xpoint2 * pixelSize, selection.ypoint2 * pixelSize);
+                glVertex2i(selection.xpoint2 * pixelSize + pixelSize, selection.ypoint2 * pixelSize);
+                glVertex2i(selection.xpoint2 * pixelSize + pixelSize, selection.ypoint2 * pixelSize + pixelSize);
+                glVertex2i(selection.xpoint2 * pixelSize, selection.ypoint2 * pixelSize + pixelSize);
+            glEnd();
+        }
+
+        //Selection is complete
         if(selection.selectionStage == 3){
+
+            //Render selection bitmap
             for(int x = selection.xpoint1; x <= selection.xpoint2; x++){
                 for(int y = selection.ypoint1; y <= selection.ypoint2; y++){
                     Color pixelColor = apeApp.GetPalette()[selection.pixels[x - selection.xpoint1][y - selection.ypoint1]];
@@ -123,13 +154,16 @@ public class Renderer {
                 }
             }
 
-            //selection border
+
+            //render flashing border
             if(DISPLAY_BLINKING) {
                 for (int x = selection.xpoint1; x <= selection.xpoint2; x++) {
                     for (int y = selection.ypoint1; y <= selection.ypoint2; y++) {
-                        //dont render interior
+
+                        //Skip interior space
                         if ((x != selection.xpoint1 && x != selection.xpoint2) && (y != selection.ypoint1 && y != selection.ypoint2))
                             continue;
+
                         Color UIColor = Palettes.Default[(y + x) % 2 == 0 ? 0 : 2];
                         glColor3f(UIColor.getRed() / 255f, UIColor.getGreen() / 255f, UIColor.getBlue() / 255f);
                         glBegin(GL_QUADS);
@@ -140,42 +174,14 @@ public class Renderer {
                         glEnd();
                     }
                 }
+
             }
 
         }
-        if(selection.selectionStage == 2){
-            //Render First Point
-            Color UIColor = Palettes.Default[2];
-            glColor3f(UIColor.getRed() / 255f, UIColor.getGreen() / 255f, UIColor.getBlue() / 255f);
-            glBegin(GL_QUADS);
-                glVertex2i(selection.xpoint1 * pixelSize, selection.ypoint1 * pixelSize);
-                glVertex2i(selection.xpoint1 * pixelSize + pixelSize, selection.ypoint1 * pixelSize);
-                glVertex2i(selection.xpoint1 * pixelSize + pixelSize, selection.ypoint1 * pixelSize + pixelSize);
-                glVertex2i(selection.xpoint1 * pixelSize, selection.ypoint1 * pixelSize + pixelSize);
-            glEnd();
-            //Render Second Point
-            glColor3f(UIColor.getRed() / 255f, UIColor.getGreen() / 255f, UIColor.getBlue() / 255f);
-            glBegin(GL_QUADS);
-                glVertex2i(selection.xpoint2 * pixelSize, selection.ypoint2 * pixelSize);
-                glVertex2i(selection.xpoint2 * pixelSize + pixelSize, selection.ypoint2 * pixelSize);
-                glVertex2i(selection.xpoint2 * pixelSize + pixelSize, selection.ypoint2 * pixelSize + pixelSize);
-                glVertex2i(selection.xpoint2 * pixelSize, selection.ypoint2 * pixelSize + pixelSize);
-            glEnd();
-        }
-        if(selection.selectionStage == 1){
-            //Render First Point
-            Color UIColor = Palettes.Default[2];
-            glColor3f(UIColor.getRed() / 255f, UIColor.getGreen() / 255f, UIColor.getBlue() / 255f);
-            glBegin(GL_QUADS);
-                glVertex2i(selection.xpoint1 * pixelSize, selection.ypoint1 * pixelSize);
-                glVertex2i(selection.xpoint1 * pixelSize + pixelSize, selection.ypoint1 * pixelSize);
-                glVertex2i(selection.xpoint1 * pixelSize + pixelSize, selection.ypoint1 * pixelSize + pixelSize);
-                glVertex2i(selection.xpoint1 * pixelSize, selection.ypoint1 * pixelSize + pixelSize);
-            glEnd();
-        }
+
     }
 
-    /**The palette editing screen, by opening this function you wave all liability from any strokes or aneurysms that occur as a result of reading it.**/
+    //Palette Editing screen
     private static void RenderColorSelector(int windowScale) {
         int pixelSize = windowScale * 16;
         //Color Selector
@@ -199,126 +205,96 @@ public class Renderer {
             }
         }
 
-        //Red Color Selector
+        //Render color selectors
         uiOffset = 4 * (pixelSize);
+        int uiOffsetY;
+
+        //Loop though the three primary colors and create a slider box for each one
+        for(int colorIndex = 0; colorIndex < 3; colorIndex++){
+            uiOffsetY = pixelSize * (5 * colorIndex);
+
+            //Draw Slider Border
+            Color UIColor = Palettes.Default[2];
+            glColor3f(UIColor.getRed() / 255f, UIColor.getGreen() / 255f, UIColor.getBlue() / 255f);
+            glBegin(GL_QUADS);
+                glVertex2i(uiOffset, uiOffset + uiOffsetY);
+                glVertex2i(uiOffset + (pixelSize * 24), uiOffset + uiOffsetY);
+                glVertex2i(uiOffset + (pixelSize * 24),  uiOffset + uiOffsetY + (pixelSize * 4));
+                glVertex2i(uiOffset, uiOffset + uiOffsetY + (pixelSize * 4));
+            glEnd();
+
+            //Get correct color value for fading bar
+            Color editingColor = new Color(0,0,0);
+            switch(colorIndex){
+                case 0:
+                    editingColor = new Color(1.0f, 0, 0);
+                    break;
+                case 1:
+                    editingColor = new Color(0, 1.0f, 0);
+                    break;
+                case 2:
+                    editingColor = new Color(0, 0, 1.0f);
+                    break;
+            }
+
+            //Draw fading color bar
+            glBegin(GL_QUADS);
+                glColor3f(0.0f, 0.0f, 0.0f);
+                glVertex2i(uiOffset + (pixelSize), (uiOffset + pixelSize) + uiOffsetY);
+                glColor3f(editingColor.getRed() / 255f, editingColor.getGreen() / 255f, editingColor.getBlue() / 255f);
+                glVertex2i(uiOffset + (pixelSize * 23), (uiOffset + pixelSize) + uiOffsetY);
+                glVertex2i(uiOffset + (pixelSize * 23), (uiOffset + pixelSize) + uiOffsetY + (pixelSize * 2));
+                glColor3f(0.0f, 0.0f, 0.0f);
+                glVertex2i(uiOffset + (pixelSize), (uiOffset + pixelSize) + uiOffsetY + (pixelSize * 2));
+            glEnd();
+
+            //Get correct value for slider bar
+            float colorValue = 0.0f;
+            switch(colorIndex){
+                case 0:
+                    colorValue = (apeApp.GetPalette()[apeApp.selectedColorIndex].getRed() / 255f);
+                    break;
+                case 1:
+                    colorValue = (apeApp.GetPalette()[apeApp.selectedColorIndex].getGreen() / 255f);
+                    break;
+                case 2:
+                    colorValue = (apeApp.GetPalette()[apeApp.selectedColorIndex].getBlue() / 255f);
+                    break;
+            }
+
+            //Draw slider bar
+            float colorPosition = colorValue * (pixelSize * 21) + pixelSize;
+            UIColor = Palettes.Default[3];
+            glColor3f(UIColor.getRed() / 255f, UIColor.getGreen() / 255f, UIColor.getBlue() / 255f);
+            glBegin(GL_QUADS);
+                glVertex2f(uiOffset + colorPosition, uiOffset + uiOffsetY);
+                glVertex2f(uiOffset + colorPosition + (pixelSize), uiOffset + uiOffsetY);
+                glVertex2f(uiOffset + colorPosition + (pixelSize),  uiOffset + uiOffsetY + (pixelSize * 4));
+                glVertex2f(uiOffset + colorPosition, uiOffset + uiOffsetY + (pixelSize * 4));
+            glEnd();
+        }
+
+        //Color Preview Border
+        uiOffsetY = 19 * pixelSize;
         Color UIColor = Palettes.Default[2];
         glColor3f(UIColor.getRed() / 255f, UIColor.getGreen() / 255f, UIColor.getBlue() / 255f);
         glBegin(GL_QUADS);
-            glVertex2i(uiOffset, uiOffset);
-            glVertex2i(uiOffset + (pixelSize * 24), uiOffset);
-            glVertex2i(uiOffset + (pixelSize * 24),  uiOffset + (pixelSize * 4));
-            glVertex2i(uiOffset, uiOffset + (pixelSize * 4));
+            glVertex2i(uiOffset, uiOffsetY);
+            glVertex2i(uiOffset + (24 * pixelSize), uiOffsetY);
+            glVertex2i(uiOffset + (24 * pixelSize), uiOffsetY + (9 * pixelSize));
+            glVertex2i(uiOffset, uiOffsetY + (9 * pixelSize));
         glEnd();
 
-        glBegin(GL_QUADS);
-            glColor3f(0.0f, 0.0f, 0.0f);
-            glVertex2i(uiOffset + (pixelSize), (uiOffset + pixelSize));
-            glColor3f(1.0f, 0.0f, 0.0f);
-            glVertex2i(uiOffset + (pixelSize * 23), (uiOffset + pixelSize));
-            glVertex2i(uiOffset + (pixelSize * 23), (uiOffset + pixelSize) + (pixelSize * 2));
-            glColor3f(0.0f, 0.0f, 0.0f);
-            glVertex2i(uiOffset + (pixelSize), (uiOffset + pixelSize) + (pixelSize * 2));
-        glEnd();
-
-        //SelectedColor
-        float colorPosition = (apeApp.GetPalette()[apeApp.selectedColorIndex].getRed() / 255f) * (pixelSize * 21) + pixelSize;
-        UIColor = Palettes.Default[3];
-        glColor3f(UIColor.getRed() / 255f, UIColor.getGreen() / 255f, UIColor.getBlue() / 255f);
-        glBegin(GL_QUADS);
-            glVertex2f(uiOffset + colorPosition, uiOffset);
-            glVertex2f(uiOffset + colorPosition + (pixelSize), uiOffset);
-            glVertex2f(uiOffset + colorPosition + (pixelSize),  uiOffset + (pixelSize * 4));
-            glVertex2f(uiOffset + colorPosition, uiOffset + (pixelSize * 4));
-        glEnd();
-
-
-
-        //Green Color Selector
-        int UIOffsetY = pixelSize * 5;
-        UIColor = Palettes.Default[2];
-        glColor3f(UIColor.getRed() / 255f, UIColor.getGreen() / 255f, UIColor.getBlue() / 255f);
-        glBegin(GL_QUADS);
-            glVertex2i(uiOffset, uiOffset + UIOffsetY);
-            glVertex2i(uiOffset + (pixelSize * 24), uiOffset + UIOffsetY);
-            glVertex2i(uiOffset + (pixelSize * 24),  uiOffset + UIOffsetY + (pixelSize * 4));
-            glVertex2i(uiOffset, uiOffset + UIOffsetY + (pixelSize * 4));
-        glEnd();
-
-        glBegin(GL_QUADS);
-            glColor3f(0.0f, 0.0f, 0.0f);
-            glVertex2i(uiOffset + (pixelSize), (uiOffset + pixelSize) + UIOffsetY);
-            glColor3f(0.0f, 1.0f, 0.0f);
-            glVertex2i(uiOffset + (pixelSize * 23), (uiOffset + pixelSize) + UIOffsetY);
-            glVertex2i(uiOffset + (pixelSize * 23), (uiOffset + pixelSize) + UIOffsetY + (pixelSize * 2));
-            glColor3f(0.0f, 0.0f, 0.0f);
-            glVertex2i(uiOffset + (pixelSize), (uiOffset + pixelSize) + UIOffsetY + (pixelSize * 2));
-        glEnd();
-
-        //SelectedColor
-        colorPosition = (apeApp.GetPalette()[apeApp.selectedColorIndex].getGreen() / 255f) * (pixelSize * 21) + pixelSize;
-        UIColor = Palettes.Default[3];
-        glColor3f(UIColor.getRed() / 255f, UIColor.getGreen() / 255f, UIColor.getBlue() / 255f);
-        glBegin(GL_QUADS);
-            glVertex2f(uiOffset + colorPosition, uiOffset + UIOffsetY);
-            glVertex2f(uiOffset + colorPosition + (pixelSize), uiOffset + UIOffsetY);
-            glVertex2f(uiOffset + colorPosition + (pixelSize),  uiOffset + UIOffsetY + (pixelSize * 4));
-            glVertex2f(uiOffset + colorPosition, uiOffset + UIOffsetY + (pixelSize * 4));
-        glEnd();
-
-
-        //Blue Color Selector
-        UIOffsetY = pixelSize * 10;
-        UIColor = Palettes.Default[2];
-        glColor3f(UIColor.getRed() / 255f, UIColor.getGreen() / 255f, UIColor.getBlue() / 255f);
-        glBegin(GL_QUADS);
-            glVertex2i(uiOffset, uiOffset + UIOffsetY);
-            glVertex2i(uiOffset + (pixelSize * 24), uiOffset + UIOffsetY);
-            glVertex2i(uiOffset + (pixelSize * 24),  uiOffset + UIOffsetY + (pixelSize * 4));
-            glVertex2i(uiOffset, uiOffset + UIOffsetY + (pixelSize * 4));
-        glEnd();
-
-        glBegin(GL_QUADS);
-            glColor3f(0.0f, 0.0f, 0.0f);
-            glVertex2i(uiOffset + (pixelSize), (uiOffset + pixelSize) + UIOffsetY);
-            glColor3f(0.0f, 0.0f, 1.0f);
-            glVertex2i(uiOffset + (pixelSize * 23), (uiOffset + pixelSize) + UIOffsetY);
-            glVertex2i(uiOffset + (pixelSize * 23), (uiOffset + pixelSize) + UIOffsetY + (pixelSize * 2));
-            glColor3f(0.0f, 0.0f, 0.0f);
-            glVertex2i(uiOffset + (pixelSize), (uiOffset + pixelSize) + UIOffsetY + (pixelSize * 2));
-        glEnd();
-
-        //SelectedColor
-        colorPosition = (apeApp.GetPalette()[apeApp.selectedColorIndex].getBlue() / 255f) * (pixelSize * 21) + pixelSize;
-        UIColor = Palettes.Default[3];
-        glColor3f(UIColor.getRed() / 255f, UIColor.getGreen() / 255f, UIColor.getBlue() / 255f);
-        glBegin(GL_QUADS);
-            glVertex2f(uiOffset + colorPosition, uiOffset + UIOffsetY);
-            glVertex2f(uiOffset + colorPosition + (pixelSize), uiOffset + UIOffsetY);
-            glVertex2f(uiOffset + colorPosition + (pixelSize),  uiOffset + UIOffsetY + (pixelSize * 4));
-            glVertex2f(uiOffset + colorPosition, uiOffset + UIOffsetY + (pixelSize * 4));
-        glEnd();
-
-        //Color Preview
-        uiOffset = 4 * pixelSize;
-        UIOffsetY = 19 * pixelSize;
-        UIColor = Palettes.Default[2];
-        glColor3f(UIColor.getRed() / 255f, UIColor.getGreen() / 255f, UIColor.getBlue() / 255f);
-        glBegin(GL_QUADS);
-            glVertex2i(uiOffset, UIOffsetY);
-            glVertex2i(uiOffset + (24 * pixelSize), UIOffsetY);
-            glVertex2i(uiOffset + (24 * pixelSize), UIOffsetY + (9 * pixelSize));
-            glVertex2i(uiOffset, UIOffsetY + (9 * pixelSize));
-        glEnd();
-
+        //Color Preview Fill
         uiOffset = 5 * pixelSize;
-        UIOffsetY = 20 * pixelSize;
+        uiOffsetY = 20 * pixelSize;
         UIColor = apeApp.GetPalette()[apeApp.selectedColorIndex];
         glColor3f(UIColor.getRed() / 255f, UIColor.getGreen() / 255f, UIColor.getBlue() / 255f);
         glBegin(GL_QUADS);
-            glVertex2i(uiOffset, UIOffsetY);
-            glVertex2i(uiOffset + (22 * pixelSize), UIOffsetY);
-            glVertex2i(uiOffset + (22 * pixelSize), UIOffsetY + (7 * pixelSize));
-            glVertex2i(uiOffset, UIOffsetY + (7 * pixelSize));
+            glVertex2i(uiOffset, uiOffsetY);
+            glVertex2i(uiOffset + (22 * pixelSize), uiOffsetY);
+            glVertex2i(uiOffset + (22 * pixelSize), uiOffsetY + (7 * pixelSize));
+            glVertex2i(uiOffset, uiOffsetY + (7 * pixelSize));
         glEnd();
     }
 }

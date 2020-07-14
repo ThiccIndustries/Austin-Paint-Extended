@@ -3,6 +3,8 @@ package ape.application;
 import static org.lwjgl.glfw.GLFW.*;
 import org.lwjgl.glfw.GLFWKeyCallback;
 
+import java.util.Arrays;
+
 public class Input extends GLFWKeyCallback {
     public static boolean[] keys = new boolean[GLFW_KEY_LAST + 1];
     public static int[] actions = new int[GLFW_KEY_LAST + 1];
@@ -27,9 +29,6 @@ public class Input extends GLFWKeyCallback {
 
     protected static void update()
     {
-        for (int i = 0; i < keys.length; i++)
-        {
-            actions[i] = -1;
-        }
+        Arrays.fill(actions, -1);
     }
 }

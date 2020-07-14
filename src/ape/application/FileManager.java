@@ -9,12 +9,12 @@ import java.lang.*;
 
 public class FileManager {
 
-    /**Save the file**/
+    //Save the file
     public void saveFileFromImage(String filePath, APFile file){
         File fileToSave = new File(filePath);
         FileOutputStream fos = null;
 
-        /**Convert from various variables into a new array of Bytes**/
+        //Convert from various variables into a new array of Bytes
         byte[] rawPixelData = new byte[576];
 
         /**Doing this with a hex string is EXTREMELY dumb, but I dont care**/
@@ -23,7 +23,7 @@ public class FileManager {
         /**Really austin?**/
         sb.append("41555354494E5041494E540056322E30"); // "AUSTIN.PAINT.v2.0"
 
-        /**Add palette information**/
+        //Add palette information
         for(int i = 0; i < 16; i++){
             int r = file.palette[i].getRed();
             int g = file.palette[i].getGreen();
@@ -31,8 +31,9 @@ public class FileManager {
             sb.append(String.format("%02X", r) + "" + String.format("%02X", g) + "" + String.format("%02X", b));
         }
 
-        /**Add pixel information,
-           you may ask why im not using %02X for this, like I am for everything else, but that doesn't work, and no, i dont know why**/
+        //Add pixel information,
+
+        /**you may ask why im not using %02X for this, like I am for everything else, but that doesn't work, and no, i dont know why**/
         for(int y = 0; y < 32; y++){
             for(int x = 0; x < 16; x++){
                 sb.append(Integer.toHexString(file.pixelArray[x * 2][y]) + Integer.toHexString(file.pixelArray[(x * 2) + 1][y]));
@@ -42,13 +43,13 @@ public class FileManager {
         /**Why does StringBuilder even need a function to do this, why can i not just cast it**/
         String hexDump = sb.toString();
 
-        /**Convert pixel array from one byte per pixel to 4 bits per pixel**/
+        //Convert pixel array from one byte per pixel to 4 bits per pixel
         for(int i = 0; i < (rawPixelData.length * 2); i+=2){
             rawPixelData[(i / 2)] = (byte)((Character.digit(hexDump.charAt(i), 16) << 4)
-                                        + Character.digit(hexDump.charAt(i + 1), 16));
+                    + Character.digit(hexDump.charAt(i + 1), 16));
         }
         try {
-            /**Write file**/
+            //Write file
             fos = new FileOutputStream(fileToSave);
             fos.write(rawPixelData);
         }catch(IOException e){
@@ -56,12 +57,13 @@ public class FileManager {
         }
     }
 
-    /**Load a saved file**/
+    //Load a saved file
     public APFile loadPixelArrayFromFile(String filePath){
         APFile fileLoaded = new APFile();
         fileLoaded.pixelArray = new int[32][32];
 
-        /**Create a local copy of the palette to prevent destructive changes, yes, this causes a memory leak**/
+        //Create a local copy of the palette to prevent destructive changes
+        /**yes, this causes a memory leak**/
         System.arraycopy(Palettes.Default, 0, fileLoaded.palette, 0, 16);
 
         File file = new File(filePath);
@@ -78,7 +80,7 @@ public class FileManager {
             System.err.print("Unknown IO Error.");
         }
 
-        /**Get Color Palette Information**/
+        //Get Color Palette Information
         for(int i = 0; i < (16 * 3); i+=3){
             fileLoaded.palette[i / 3] = new Color(rawPixelData[i + 16] & 0xff, rawPixelData[i + 16 + 1] & 0xff, rawPixelData[i + 16 +  2] & 0xff);
         }
