@@ -1,6 +1,8 @@
 # Austin Paint Extended
 The useless editor for a useless, proprietary format.
 
+A.P.E Has been superseded by [Austin Paint Redux](https://github.com/MajesticWaffle/Austin-Paint-Redux)
+
 By reading the source code you agree to not sue me for any strokes that may occur
 
 ## Application Controls
